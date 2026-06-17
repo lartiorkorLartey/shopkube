@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: analytics-service-config
+  namespace: shopkube
+data:
+  PORT: "8088"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "shopkube"
+  DB_USER: "shopkube"
+  LOG_LEVEL: "info"

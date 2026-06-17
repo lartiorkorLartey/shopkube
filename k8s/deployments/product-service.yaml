@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: shopkube
+  labels:
+    app: product-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+        - name: product-service
+          image: shopkube/product-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: product-service-config
+            - secretRef:
+                name: product-service-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5

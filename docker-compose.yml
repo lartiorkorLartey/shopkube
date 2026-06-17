@@ -1,0 +1,242 @@
+version: '3.9'
+
+services:
+
+  # ─── Application Services ───────────────────────────────────────────────────
+
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      USER_SERVICE_URL: http://user-service:8081
+      PRODUCT_SERVICE_URL: http://product-service:8082
+      ORDER_SERVICE_URL: http://order-service:8083
+      CART_SERVICE_URL: http://cart-service:8084
+      REVIEW_SERVICE_URL: http://review-service:8087
+      ANALYTICS_SERVICE_URL: http://analytics-service:8088
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: "8081"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: shopkube
+      DB_USER: shopkube
+      DB_PASSWORD: shopkube_pass
+      JWT_SECRET: dev-jwt-secret-changeme
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  product-service:
+    build: ./services/product-service
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: "8082"
+      MONGODB_URL: mongodb://mongodb:27017
+      MONGODB_DB: shopkube
+      LOG_LEVEL: info
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  order-service:
+    build: ./services/order-service
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: "8083"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: shopkube
+      DB_USER: shopkube
+      DB_PASSWORD: shopkube_pass
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: shopkube
+      RABBITMQ_PASSWORD: shopkube_pass
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  cart-service:
+    build: ./services/cart-service
+    ports:
+      - "8084:8084"
+    environment:
+      PORT: "8084"
+      REDIS_URL: redis://redis:6379
+      CART_TTL_SECONDS: "604800"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  notification-service:
+    build: ./services/notification-service
+    ports:
+      - "8085:8085"
+    environment:
+      PORT: "8085"
+      RABBITMQ_URL: amqp://shopkube:shopkube_pass@rabbitmq:5672/
+      CELERY_BROKER_URL: amqp://shopkube:shopkube_pass@rabbitmq:5672/
+      LOG_LEVEL: INFO
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  inventory-service:
+    build: ./services/inventory-service
+    ports:
+      - "8086:8086"
+    environment:
+      PORT: "8086"
+      DATABASE_URL: postgres://shopkube:shopkube_pass@postgres:5432/shopkube
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  review-service:
+    build: ./services/review-service
+    ports:
+      - "8087:8087"
+    environment:
+      PORT: "8087"
+      DATABASE_URL: postgresql://shopkube:shopkube_pass@postgres:5432/shopkube_reviews
+      RAILS_ENV: production
+      SECRET_KEY_BASE: dev-secret-key-base-changeme-minimum-32-chars
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  analytics-service:
+    build: ./services/analytics-service
+    ports:
+      - "8088:8088"
+    environment:
+      PORT: "8088"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: shopkube
+      DB_USER: shopkube
+      DB_PASSWORD: shopkube_pass
+      RABBITMQ_URL: amqp://shopkube:shopkube_pass@rabbitmq:5672/
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  # ─── Infrastructure Services ─────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: shopkube
+      POSTGRES_USER: shopkube
+      POSTGRES_PASSWORD: shopkube_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopkube"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: shopkube
+      RABBITMQ_DEFAULT_PASS: shopkube_pass
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+# ─── Volumes ──────────────────────────────────────────────────────────────────
+
+volumes:
+  postgres_data:
+  mongodb_data:
+
+# ─── Networks ─────────────────────────────────────────────────────────────────
+
+networks:
+  shopkube-network:
+    driver: bridge

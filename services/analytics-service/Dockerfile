@@ -1,0 +1,20 @@
+# Build stage
+FROM golang:1.22-alpine AS builder
+WORKDIR /build
+RUN apk add --no-cache git ca-certificates
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o analytics-service .
+
+# Runtime stage
+FROM alpine:3.19
+RUN apk --no-cache add ca-certificates tzdata
+WORKDIR /app
+RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
+COPY --from=builder --chown=appuser:appgroup /build/analytics-service .
+USER appuser
+EXPOSE 8088
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://localhost:8088/health || exit 1
+CMD ["./analytics-service"]

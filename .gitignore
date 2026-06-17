@@ -1,0 +1,70 @@
+# ── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ── Editors / IDEs ──────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+*.swp
+*.swo
+*~
+
+# ── Environment / secrets ────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Node.js (api-gateway, cart-service) ─────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+
+# ── Go binaries (user-service, analytics-service) ───────────────────────────
+services/user-service/user-service
+services/analytics-service/analytics-service
+
+# ── Python (product-service, notification-service) ───────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+.pytest_cache/
+.mypy_cache/
+
+# ── Java / Maven (order-service) ─────────────────────────────────────────────
+services/order-service/target/
+*.class
+
+# ── Rust (inventory-service) ─────────────────────────────────────────────────
+services/inventory-service/target/
+
+# ── Ruby / Rails (review-service) ────────────────────────────────────────────
+services/review-service/.bundle/
+services/review-service/vendor/bundle/
+services/review-service/tmp/
+services/review-service/log/
+services/review-service/*.log
+services/review-service/Gemfile.lock
+
+# ── SQLite (notification-service runtime DB) ─────────────────────────────────
+*.db
+*.sqlite3
+
+# ── Docker ───────────────────────────────────────────────────────────────────
+.docker/

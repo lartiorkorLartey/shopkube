@@ -1,0 +1,4 @@
+analytics-service
+*.test
+.git
+README.md

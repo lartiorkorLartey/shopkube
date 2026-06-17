@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-service-config
+  namespace: shopkube
+data:
+  SERVER_PORT: "8083"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "shopkube"
+  DB_USER: "shopkube"
+  RABBITMQ_HOST: "rabbitmq"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: "shopkube"

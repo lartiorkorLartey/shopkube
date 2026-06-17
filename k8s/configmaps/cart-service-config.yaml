@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cart-service-config
+  namespace: shopkube
+data:
+  PORT: "8084"
+  REDIS_URL: "redis://redis:6379"
+  CART_TTL_SECONDS: "604800"
+  LOG_LEVEL: "info"
