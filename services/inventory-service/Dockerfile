@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.78-slim AS builder
+FROM rust:1.88 AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
@@ -7,16 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
-
-# Cache dependency compilation: copy manifest first and build with a stub main
-COPY Cargo.toml ./
-RUN mkdir src && echo 'fn main() {}' > src/main.rs
-RUN cargo build --release 2>/dev/null || true
-RUN rm src/main.rs
-
-# Build the real application
-COPY src ./src
-RUN touch src/main.rs && cargo build --release
+COPY . .
+RUN cargo build --release
 
 # Runtime stage
 FROM debian:bookworm-slim

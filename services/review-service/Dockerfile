@@ -1,28 +1,20 @@
-FROM ruby:3.3-slim AS base
+FROM ruby:3.3
 
-# Install runtime deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
     libpq-dev \
-    build-essential \
     && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -g 1001 appgroup \
+    && useradd -u 1001 -g appgroup --no-create-home --shell /bin/false appuser
 
 WORKDIR /app
 
-# Install gems
 COPY Gemfile ./
-RUN bundle config set --local deployment 'false' && \
-    bundle config set --local without 'development test' && \
+RUN bundle config set --local without 'development test' && \
     bundle install --jobs 4 --retry 3
 
-# Copy application code
 COPY . .
-
-# Precompile bootsnap
-RUN bundle exec bootsnap precompile --gemfile app/ lib/ 2>/dev/null || true
-
-# Non-root user
-RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup --no-create-home appuser
+RUN bundle exec bootsnap precompile --gemfile 2>/dev/null || true
 RUN mkdir -p tmp/pids tmp/cache tmp/sockets log && chown -R appuser:appgroup /app
 
 USER appuser
