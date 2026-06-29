@@ -29,7 +29,8 @@ mongo_client: Optional[AsyncIOMotorClient] = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global mongo_client
-    mongo_client = AsyncIOMotorClient(MONGODB_URL)
+    mongo_client = AsyncIOMotorClient(MONGODB_URL, serverSelectionTimeoutMS=10000)
+    await mongo_client.admin.command("ping")
     logger.info("Connected to MongoDB", extra={"service": "product-service"})
     yield
     mongo_client.close()
