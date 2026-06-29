@@ -14,6 +14,7 @@ RUN bundle config set --local without 'development test' && \
     bundle install --jobs 4 --retry 3
 
 COPY . .
+RUN chmod +x bin/rails bin/rake entrypoint.sh
 RUN bundle exec bootsnap precompile --gemfile 2>/dev/null || true
 RUN mkdir -p tmp/pids tmp/cache tmp/sockets log && chown -R appuser:appgroup /app
 

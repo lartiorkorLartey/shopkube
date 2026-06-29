@@ -44,11 +44,13 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Proxy helper
-function makeProxy(target, pathRewrite) {
+// Express strips the mount path from req.url before the middleware sees it,
+// so we prepend the service's base path via a rewrite function.
+function makeProxy(target, prefix) {
   return createProxyMiddleware({
     target,
     changeOrigin: true,
-    pathRewrite,
+    pathRewrite: (path) => path === '/' ? prefix : `${prefix}${path}`,
     on: {
       error: (err, req, res) => {
         console.error(JSON.stringify({
@@ -68,12 +70,12 @@ function makeProxy(target, pathRewrite) {
 }
 
 // Routes - proxy to downstream services
-app.use('/api/users',     makeProxy(services.user,      { '^/api/users': '/users' }));
-app.use('/api/products',  makeProxy(services.product,   { '^/api/products': '/products' }));
-app.use('/api/orders',    makeProxy(services.order,     { '^/api/orders': '/orders' }));
-app.use('/api/cart',      makeProxy(services.cart,      { '^/api/cart': '/cart' }));
-app.use('/api/reviews',   makeProxy(services.review,    { '^/api/reviews': '/reviews' }));
-app.use('/api/analytics', makeProxy(services.analytics, { '^/api/analytics': '/analytics' }));
+app.use('/api/users',     makeProxy(services.user,      '/users'));
+app.use('/api/products',  makeProxy(services.product,   '/products'));
+app.use('/api/orders',    makeProxy(services.order,     '/orders'));
+app.use('/api/cart',      makeProxy(services.cart,      '/cart'));
+app.use('/api/reviews',   makeProxy(services.review,    '/reviews'));
+app.use('/api/analytics', makeProxy(services.analytics, '/analytics'));
 
 // Health check
 app.get('/health', (req, res) => {

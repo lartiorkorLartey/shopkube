@@ -7,7 +7,7 @@ services:
   api-gateway:
     build: ./services/api-gateway
     ports:
-      - "8080:8080"
+      - "8090:8080"
     environment:
       PORT: "8080"
       USER_SERVICE_URL: http://user-service:8081
@@ -159,6 +159,16 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    networks:
+      - shopkube-network
+    restart: unless-stopped
+
+  frontend:
+    build: ./services/frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
     networks:
       - shopkube-network
     restart: unless-stopped
